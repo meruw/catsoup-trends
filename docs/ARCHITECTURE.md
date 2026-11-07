@@ -77,9 +77,9 @@ Reuse CATsoup design principles without depending on Publisher runtime code.
 
 The public component should support a useful individual workflow, including a local web interface. Possible paid value includes operated hosting, scheduled workloads, collaboration, storage, and support. Billing and team management are outside the PoC.
 
-A separate repository or HTTP API does not automatically make a proprietary extension legally independent of a copyleft engine. Resolve licensing before publication and external contributions.
+The engine, API, local web interface, and repository documentation are licensed under Apache-2.0. Commercial use and proprietary derivatives are permitted subject to the license terms, including attribution and redistribution obligations. These permissions also apply to third parties.
 
-Apache-2.0 is recommended for permissive reuse and possible proprietary extensions. AGPL-3.0 is the alternative for reciprocal source availability, including modified software used over a network. Both permit commercial use and competitors. License selection remains pending.
+The public project must remain useful on its own. Any future proprietary product would be maintained separately, with its own licensing and dependency review. No proprietary service or paid feature is implemented in this PoC. Third-party content and platform data are not relicensed by this repository.
 
 ## References
 
@@ -87,4 +87,3 @@ Apache-2.0 is recommended for permissive reuse and possible proprietary extensio
 - [Vue application approaches](https://vuejs.org/guide/extras/ways-of-using-vue.html)
 - [YouTube search API](https://developers.google.com/youtube/v3/docs/search/list)
 - [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
-- [AGPL-3.0](https://opensource.org/license/agpl-3.0)

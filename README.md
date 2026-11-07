@@ -2,19 +2,33 @@
 
 A standalone research product for discovering successful short-form content, comparing evidence, and developing original creative briefs.
 
-**Status:** architecture only. There is no runnable application, implemented API, or stable release.
+**Status: architecture and planning.** There is no runnable application, implemented API, or stable release yet.
 
-Trends works independently of CATsoup Publisher. Its intended public scope is the research engine, its API, and a usable local web interface. A possible hosted commercial product is a future decision.
+Trends is independent of CATsoup Publisher. The open-source scope includes the research engine, its API, and a usable local web interface. A possible hosted commercial product is a future decision.
+
+## Planned architecture
+
+| Component | Technology |
+| --- | --- |
+| Web interface | Vue 3 + TypeScript |
+| Backend and API | Go with a versioned REST API |
+| Local storage | SQLite |
+| Data analysis | On-demand Python workers when analytical features require them |
+
+The first deployment runs locally. Public hosting and multi-user access require additional implementation and security validation.
 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md): technology, boundaries, data, security, and deployment.
-- [PoC scope](docs/POC.md): workflow, acceptance criteria, and pending decisions.
+- [PoC scope](docs/POC.md): the first useful workflow and acceptance criteria.
+- [Contributing](CONTRIBUTING.md): how to propose changes.
 
-## Publication and license
+## License
 
-The public component is intended to be public from its first publication. This local repository has not been published.
+Licensed under the [Apache License 2.0](LICENSE). The public engine and local interface may be used in commercial products under its terms. See [NOTICE](NOTICE) for attribution.
 
-License selection is pending owner confirmation. Apache-2.0 is recommended for a portfolio engine that may support proprietary commercial products. AGPL-3.0 is the alternative when reciprocal source availability is the priority. Neither license has been applied; no open-source grant is implied yet.
+The project license does not grant rights to third-party videos, platform data, or trademarks. Provider access and data usage remain subject to the applicable platform terms.
 
-Credentials, private research, personal provider data, and production media must remain outside version control. Future examples must be synthetic or cleared for redistribution.
+## Data boundaries
+
+Credentials, private research, personal provider data, and production media must remain outside version control. Examples and fixtures must be synthetic or cleared for redistribution.

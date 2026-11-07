@@ -2,9 +2,9 @@
 
 ## Current state
 
-Documentation only. No application code, dependencies, credentials, remote repository, or release has been created by this scaffold.
+Documentation only. No application code, dependencies, credentials, or release has been created.
 
-The intended engine is public from its first publication. The owner's licensing questions reopened the earlier AGPL preference. Apache-2.0 is now recommended, but no final license has been applied.
+The engine and local interface are planned as a public Apache-2.0 project. Hosting, monetization, and any proprietary product are future decisions.
 
 ## First useful workflow
 
@@ -40,4 +40,4 @@ Publishing, animation, guaranteed viral predictions, unrestricted scraping, refe
 
 ## Next action
 
-Confirm the public license and publish the repository. Then review the architecture before implementing the first source-backed vertical slice. The current task authorizes repository scaffolding and documentation, not feature implementation.
+Review the architecture and confirm the first source-backed vertical slice before implementation. Repository publication does not mark the PoC complete or authorize a stable release.
