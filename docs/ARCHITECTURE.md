@@ -1,89 +1,68 @@
 # Architecture
 
-## Product and boundaries
+## Implemented local application
 
-Trends helps creators find references, examine observable performance, save evidence, and develop original ideas. It does not require Publisher, animation tools, or a CATsoup account.
+Trends is a standalone research product. Publisher, animation tools, and paid models are not runtime dependencies.
 
-Publisher may later import selected results through the API or an export. It retains a snapshot so that closing Trends does not affect existing drafts or publishing. The applications never share a database or credentials.
-
-Start with a modular backend, not microservices. Keep business logic independent of HTTP handlers and provider response formats.
-
-| Component | Choice and responsibility |
+| Layer | Implementation |
 | --- | --- |
-| Web interface | Vue 3 + TypeScript; search, comparisons, saved references, briefs |
-| Backend | Go; application services, credentials, connectors, persistence, job coordination |
-| API | REST under /api/v1; OpenAPI contract alongside implemented endpoints |
-| Local database | SQLite; migrations, transactions, timestamped observations |
-| Analysis | Python, introduced when a concrete analytical feature needs it |
+| Interface | Vue 3, TypeScript, Vite build; system fonts and Lucide icons |
+| API | Go net/http under /api/v1; same origin as the interface |
+| Research | YouTube adapter, reference storage, editable analysis, Markdown export |
+| Storage | SQLite, one local workspace, latest metadata per saved reference |
+| Packaging | Frontend embedded in one Go executable; Node needed only for builds |
 
-The browser calls the API. Application services coordinate persistence and jobs. Jobs call provider adapters or the analysis worker. Publisher is an optional API client.
+Code lives in `cmd/trends`, `internal/research`, `internal/server`, `internal/secret`, and `web/src`. Synthetic browser-test hosting is isolated in `support/testserver` and is not compiled into the app.
 
-## Python boundary
+## API and data
 
-Go starts a bounded, cancellable Python process only when an analysis requires it. Use a fixed executable and arguments without a shell. Exchange versioned structured input and output, with diagnostics on a separate channel.
+The [OpenAPI contract](../api/openapi.json) describes implemented routes. The API returns controlled error codes/messages and never returns the provider key. Reference IDs are validated YouTube IDs, not arbitrary URLs.
 
-Python receives only necessary analysis inputs, not provider secrets or database ownership. Go validates and persists results. Pin dependencies in a managed environment; decide worker packaging when it is introduced. Simple filtering and sorting remain in Go/SQL. Do not load models at startup.
+A saved reference contains a provider ID, save time, optional current video metadata, a note, and creator-authored analysis fields. Missing metrics are nullable. SQLite queries scope reference access to the fixed local workspace. This is not multi-tenant authentication.
 
-A separately deployed analysis worker is a future scaling option, not a PoC dependency.
+Search joins search.list results with videos.list metadata, preserving provider order. One page is at most 20 results. Search results cache in memory for ten minutes, bounded to 20 pages; save candidates are bounded to 400. New provider lookups have two concurrency slots and a local limit of 20 lookups/minute. Provider quotas remain authoritative. No automatic retry or continuous polling is performed.
 
-## Data and evidence
+Saved lists use pages of 20. References deduplicate by workspace and video ID. Updating metadata preserves notes and analysis. The schema initialization migrates the analysis column without discarding saved notes.
 
-- Workspace: ownership boundary for research, configuration, and job results.
-- Reference: provider ID, canonical URL, creator, publication time, and available metadata.
-- Observation: metric values, observation time, source, and collection method.
-- Saved reference: workspace-specific notes and categorization.
-- Analysis: algorithm version, inputs, parameters, reasons, and limitations.
-- Brief: original concept, adaptation notes, references, and optional language variants.
-- Job: progress, cancellation, state, failure reason, and retry metadata.
+## Analysis and exports
 
-Missing values remain missing rather than becoming zero. Distinguish historical popularity from current growth: growth requires multiple observations. Compare similar age windows and creator baselines when available. A hashtag associated with successful videos is not evidence of causation.
+Analysis is written by the user after watching a reference: hook, structure, twist, original adaptation, keywords, and notes. No model, transcript extraction, footage processing, or derived performance score runs inside this PoC.
 
-Verify each provider's access, quotas, storage rules, and redistribution permissions before implementing its connector. Do not promise unrestricted discovery across social platforms. Support manual URL import where useful. Do not download or redistribute reference videos by default.
+Claude export includes up to ten references, their source URLs, and user-authored fields, followed by no hidden network operation. It omits provider metadata. The prompt requests original adaptations, ES/EN hook variants, animation effort, and explicit unknowns. Reference notes are marked as quoted research material, not instructions.
 
-## Local deployment
+Python is reserved for a specific future analytical requirement. If introduced, Go will start a bounded, cancellable worker with structured input/output and no provider secrets. Simple filtering remains in Go/SQL.
 
-A Go executable serves compiled frontend assets and the API from the same origin. Node is needed for building, not as a production server. Store runtime data outside the repository.
+## Provider constraints
 
-Bind only to loopback and let the OS assign an available port. Define a user-protected mechanism for discovering the actual endpoint. Provide an explicit shutdown action; closing a browser tab does not stop a server. No always-on service is required for the PoC.
+The under-four-minute API filter includes videos outside Shorts. Language is a relevance preference, not a strict filter. Search ordering and current view counts do not establish current growth or likelihood of future success.
 
-Bound job concurrency, retries, request sizes, timeouts, caches, and log retention. Persist job state and define restart recovery when jobs are implemented. Avoid continuous polling when the user is not researching.
+YouTube metadata is kept as one current snapshot, cleared after 29 days unless refreshed. Cleanup runs at startup, on reference reads, and hourly while running. A closed app cannot clean files; reopening performs cleanup before serving saved data. Unavailable refreshed videos lose their metadata while retaining bookmarks and creator notes.
 
-## Hosted evolution
+Do not add derived YouTube metrics, historical metric archives, scraping, automated model inputs from API content, or redistribution without checking current provider policies and obtaining any required authorization.
 
-Reuse the core and frontend, but treat public hosting as a separate delivery milestone. It requires authentication, authorization, tenant isolation tests, HTTPS, quotas, backups, protected secrets, and operational monitoring.
+Sources:
+- [Search API](https://developers.google.com/youtube/data/reference/rest/v3/search/list)
+- [Videos API](https://developers.google.com/youtube/data/reference/rest/v3/videos/list)
+- [YouTube developer policies](https://developers.google.com/youtube/terms/developer-policies)
 
-Workspace identifiers establish ownership in the model; they are not sufficient security by themselves. Enforce ownership in every relevant service and query.
+## Local security
 
-PostgreSQL is a candidate for a hosted multi-user edition. Persistence boundaries help migration, but moving from SQLite still requires schema/data migrations and integration tests. Do not maintain two database implementations before there is a concrete need.
+The process binds only to 127.0.0.1 on an OS-assigned port. The browser receives a random 256-bit session credential in the launch URL fragment, removes it from the address bar, and keeps it in sessionStorage. API calls use Bearer authentication. The credential expires with the process.
 
-## Security
+Host must match the listener. Origin, when supplied, must match the local origin; cross-site browser requests are rejected. No wildcard CORS is enabled. CSP limits scripts/styles/connections to the app and thumbnails to YouTube. Responses use no-store and no-referrer.
 
-- Authenticate local sessions and optional API clients; loopback is not authentication.
-- Validate Host and Origin, protect state-changing requests against CSRF, and avoid wildcard CORS.
-- Keep provider credentials in backend-controlled protected storage, never in frontend assets or logs.
-- Use a scoped, revocable credential for optional Publisher integration.
-- Treat imported URLs as untrusted: restrict schemes/providers and redirects, prevent private-network fetching, and bound response sizes.
-- Do not expose arbitrary filesystem operations or command execution.
-- Keep public fixtures synthetic and exports free of credentials.
-- Define source-specific retention and deletion behavior during connector implementation.
+Windows key storage uses DPAPI scoped to the current user; other operating systems require an environment key. An attacker already running under your Windows user is outside this boundary. No plaintext key fallback is provided.
+
+Provider requests use a fixed endpoint, reject redirects, time out after 20 seconds, and limit response bodies to 2 MiB. API bodies are bounded to 32 KiB, validated, and reject unknown fields. User text is rendered using Vue text bindings, never raw HTML. No generic filesystem or shell endpoint exists.
 
 ## Interface
 
-Use a compact research workspace with search, results, and on-demand details. Keep saved references and briefs easy to reach. Avoid dense dashboards, decorative cards, and a mandatory numbered wizard. Show provenance and uncertainty where users make comparisons.
+Explore and Saved are the primary destinations. Settings is secondary. Results use compact thumbnail rows; details and analysis open on demand. Fields and controls remain keyboard-accessible. The visual direction follows [unslop](https://github.com/heydamir/unslop): restrained warm surfaces, orange actions, consistent spacing, and no decorative dashboard cards.
 
-Reuse CATsoup design principles without depending on Publisher runtime code.
+## Future boundaries
 
-## Public and commercial scope
+Publisher integration will use an explicit export or separately scoped API credential; the apps will not share databases or provider credentials. No Publisher client is implemented.
 
-The public component should support a useful individual workflow, including a local web interface. Possible paid value includes operated hosting, scheduled workloads, collaboration, storage, and support. Billing and team management are outside the PoC.
+Public hosting needs authentication, authorization, tenant isolation, HTTPS, quotas, backups, secret management, and operational monitoring. The local credential scheme must not be reused as hosted authentication. PostgreSQL and separate workers are possible scaling choices, not PoC dependencies.
 
-The engine, API, local web interface, and repository documentation are licensed under Apache-2.0. Commercial use and proprietary derivatives are permitted subject to the license terms, including attribution and redistribution obligations. These permissions also apply to third parties.
-
-The public project must remain useful on its own. Any future proprietary product would be maintained separately, with its own licensing and dependency review. No proprietary service or paid feature is implemented in this PoC. Third-party content and platform data are not relicensed by this repository.
-
-## References
-
-- [Go HTTP](https://pkg.go.dev/net/http)
-- [Vue application approaches](https://vuejs.org/guide/extras/ways-of-using-vue.html)
-- [YouTube search API](https://developers.google.com/youtube/v3/docs/search/list)
-- [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+The useful local engine, API, UI, and documentation are Apache-2.0. Future operated hosting, collaboration, scheduled workloads, and support may be commercial offerings maintained separately. There is no billing or proprietary service in this repository.
