@@ -1,0 +1,40 @@
+# Private local data and configuration
+.env
+.env.*
+!.env.example
+*.local.*
+/data/
+/work/
+/logs/
+/exports/
+/credentials/
+*.db
+*.db-*
+*.sqlite*
+*.log
+*.pem
+*.key
+
+# Toolchains and generated files
+/.tools/
+node_modules/
+dist/
+bin/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+*.exe
+
+# Editor and personal agent files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+AGENTS.md
+CLAUDE.md
