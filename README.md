@@ -28,7 +28,7 @@ You can also run `bin/CATsoupTrends.exe` directly. Its `-no-browser` flag prints
 3. Restrict the key to YouTube Data API v3. HTTP-referrer restrictions do not work for requests made by this backend; an IP restriction must match your public egress IP.
 4. Open **Settings** in Trends, save the key, and perform a search.
 
-On Windows, the saved key is encrypted with DPAPI for your Windows user. Alternatively, set `TRENDS_YOUTUBE_API_KEY` before launch. Environment keys take precedence and cannot be replaced from the interface.
+On Windows, the saved key is encrypted with DPAPI for your Windows user. Each save verifies decryption before replacing the previous file; temporary files contain ciphertext only and a failed replacement preserves the previous key. Existing DPAPI keys remain readable. Alternatively, set `TRENDS_YOUTUBE_API_KEY` before launch. Environment keys take precedence and cannot be replaced from the interface.
 
 Searches use your Google project quota. Trends makes no paid AI calls. Check your project's current quotas in Google Cloud; no universal quota or request-price assumption is built into the app.
 

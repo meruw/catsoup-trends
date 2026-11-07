@@ -16,7 +16,7 @@ Validated on Windows with Go 1.27.3, Node 24.22.2, npm 11.19.1, and Chrome on 20
 - Go unit/integration tests and go vet.
 - YouTube response joining, nullable metrics, provider error redaction, and cancellation.
 - SQLite persistence, deduplication, note preservation, schema migration, metadata expiry, deletion, and local-workspace query scoping.
-- Windows DPAPI storage, replacement, and rejection of corrupt encrypted data.
+- Windows DPAPI storage, verified encryption before replacement, compatibility with existing encrypted keys, rejection of corrupt/oversized data, and preservation of the previous key plus temporary-file cleanup when replacement fails.
 - API session authentication, Host/Origin rejection, cross-site rejection, request bounds, cached search saving, and export boundaries.
 - Two browser scenarios using the real API and SQLite with a synthetic provider: search/pagination/save/analysis/export/restart/delete; filters/quota error/cancel/empty results/mobile layout.
 - Visual inspection of Explore, Saved with analysis, and mobile details.
