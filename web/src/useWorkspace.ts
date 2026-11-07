@@ -11,8 +11,10 @@ import {
   type Analysis,
 } from './api'
 export function useWorkspace() {
-  const tab = ref<'explore' | 'saved' | 'settings'>('explore'),
+  const tab = ref<'explore' | 'saved' | 'settings' | 'discover' | 'ideas'>('explore'),
     status = ref<Status>()
+  const ideaDirty = ref(false),
+    ideaSeed = ref<string[]>([])
   const query = ref(''),
     savedQuery = ref(''),
     results = ref<Video[]>([]),
@@ -140,7 +142,7 @@ export function useWorkspace() {
     total.value = (await api<SavedPage>('/references')).total
   }
   function discardOK() {
-    return !dirty.value || confirm('Discard your unsaved notes and analysis?')
+    return !(dirty.value || ideaDirty.value) || confirm('Discard your unsaved changes?')
   }
   function closeDetails() {
     if (discardOK()) selected.value = null
@@ -150,6 +152,7 @@ export function useWorkspace() {
     cancel()
     selected.value = null
     tab.value = value
+    feedback.value = ''
     error.value = ''
     showFilters.value = false
     if (value === 'saved') void searchSaved()
@@ -413,11 +416,11 @@ export function useWorkspace() {
   function escape(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       showFilters.value = false
-      closeDetails()
+      if (selected.value) closeDetails()
     }
   }
   function beforeLeave(e: BeforeUnloadEvent) {
-    if (dirty.value) e.preventDefault()
+    if (dirty.value || ideaDirty.value) e.preventDefault()
   }
   onMounted(async () => {
     window.addEventListener('keydown', escape)
@@ -435,7 +438,26 @@ export function useWorkspace() {
     window.removeEventListener('keydown', escape)
     window.removeEventListener('beforeunload', beforeLeave)
   })
+  function combineIdeas() {
+    if (!exportIDs.value.size || !discardOK()) return
+    ideaSeed.value = [...exportIDs.value]
+    selected.value = null
+    switchTab('ideas')
+  }
+  async function searchTerm(term: string) {
+    if (!discardOK()) return
+    selected.value = null
+    ideaDirty.value = false
+    switchTab('explore')
+    query.value = term.slice(0, 200)
+    await searchYouTube()
+  }
   return {
+    ideaDirty,
+    ideaSeed,
+    combineIdeas,
+    searchTerm,
+    loadCount,
     tab,
     status,
     query,

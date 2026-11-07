@@ -52,7 +52,7 @@ func main() {
 			names := []string{"The shadow that moved first", "One rule in an empty city", "A door that opens somewhere else"}
 			items := []any{}
 			for i, name := range names {
-				items = append(items, map[string]any{"id": fmt.Sprintf("fixture000%d", i+1), "snippet": map[string]any{"title": name + " [test fixture]", "channelTitle": "Synthetic animation studio", "channelId": "fixturechannel", "description": "Synthetic reference for automated testing. Not a real YouTube video.", "publishedAt": "2026-10-12T12:00:00Z", "thumbnails": map[string]any{"medium": map[string]string{"url": fmt.Sprintf("https://i.ytimg.com/vi/fixture000%d/mqdefault.jpg", i+1)}}}, "contentDetails": map[string]string{"duration": "PT22S"}, "statistics": map[string]string{"viewCount": fmt.Sprint((i + 1) * 24000), "likeCount": fmt.Sprint((i + 1) * 800)}})
+				items = append(items, map[string]any{"id": fmt.Sprintf("fixture000%d", i+1), "snippet": map[string]any{"title": name + " [test fixture]", "channelTitle": "Synthetic animation studio", "channelId": "fixturechannel", "tags": []string{"animation", "block story"}, "description": "Synthetic reference for automated testing. Not a real YouTube video. #Animation #Historia", "publishedAt": "2026-10-12T12:00:00Z", "thumbnails": map[string]any{"medium": map[string]string{"url": fmt.Sprintf("https://i.ytimg.com/vi/fixture000%d/mqdefault.jpg", i+1)}}}, "contentDetails": map[string]string{"duration": "PT22S"}, "statistics": map[string]string{"viewCount": fmt.Sprint((i + 1) * 24000), "likeCount": fmt.Sprint((i + 1) * 800)}})
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{"items": items})
 		}

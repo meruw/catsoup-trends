@@ -560,6 +560,279 @@
           }
         }
       }
+    },
+    "/discover": {
+      "get": {
+        "summary": "Load the YouTube mostPopular chart without a query. Provider order, country and category; not a keyword or Shorts ranking. Shares the bounded 10-minute search cache and lookup limits.",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$",
+              "default": "MX"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "10",
+                "20",
+                "24"
+              ],
+              "default": "20"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error; HTTP 400/401/403/404/408/409/415/429/500/502/503 as applicable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ideas": {
+      "get": {
+        "summary": "List ideas by update time, 20 per page; literal title search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Idea"
+                      }
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error; HTTP 400/401/403/404/408/409/415/429/500/502/503 as applicable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a local idea from zero to ten saved references",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Idea"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Idea"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error; HTTP 400/401/403/404/408/409/415/429/500/502/503 as applicable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ideas/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Replace an existing idea; preserves links to removed source references",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Idea"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Idea"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error; HTTP 400/401/403/404/408/409/415/429/500/502/503 as applicable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an idea without deleting saved references",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error; HTTP 400/401/403/404/408/409/415/429/500/502/503 as applicable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ideas/{id}/export": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Export creator concept, source links and existing creator observations. Excludes provider metadata and metrics.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "markdown": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error; HTTP 400/401/403/404/408/409/415/429/500/502/503 as applicable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -652,6 +925,16 @@
               "null"
             ],
             "minimum": 0
+          },
+          "tags": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags supplied by YouTube. Older saved metadata may omit them."
           }
         },
         "required": [
@@ -827,6 +1110,56 @@
           "hasMore"
         ],
         "additionalProperties": false
+      },
+      "Idea": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "sources": {
+            "type": "array",
+            "maxItems": 10,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{11}$"
+            }
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "hook": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "structure": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "twist": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "world": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 3000
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "description": "Creator-authored concept. Server assigns id and updatedAt. Source IDs survive removal of a reference; provider metadata is never copied into this record."
       }
     }
   }

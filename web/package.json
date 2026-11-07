@@ -7,8 +7,9 @@
     "check": "vue-tsc --noEmit",
     "build": "vue-tsc --noEmit && vite build",
     "test:ui": "playwright test",
-    "format": "prettier --write src tests *.ts *.json",
-    "format:check": "prettier --check src tests *.ts *.json"
+    "format": "prettier --write src tests *.ts *.json *.mjs",
+    "format:check": "prettier --check src tests *.ts *.json *.mjs",
+    "dev": "node dev.mjs"
   },
   "dependencies": {
     "@lucide/vue": "1.70.0",

@@ -57,7 +57,7 @@ Provider requests use a fixed endpoint, reject redirects, time out after 20 seco
 
 ## Interface
 
-Explore and Saved are the primary destinations. Settings is secondary. Results use compact thumbnail rows; details and analysis open on demand. Fields and controls remain keyboard-accessible. The visual direction follows [unslop](https://github.com/heydamir/unslop): restrained warm surfaces, orange actions, consistent spacing, and no decorative dashboard cards.
+Discover, Explore, Saved and Ideas are the primary destinations. Settings is secondary. Results use compact thumbnail rows; details and analysis open on demand. Fields and controls remain keyboard-accessible. The visual direction follows [unslop](https://github.com/heydamir/unslop): restrained warm surfaces, orange actions, consistent spacing, and no decorative dashboard cards.
 
 ## Future boundaries
 
@@ -66,3 +66,19 @@ Publisher integration will use an explicit export or separately scoped API crede
 Public hosting needs authentication, authorization, tenant isolation, HTTPS, quotas, backups, secret management, and operational monitoring. The local credential scheme must not be reused as hosted authentication. PostgreSQL and separate workers are possible scaling choices, not PoC dependencies.
 
 The useful local engine, API, UI, and documentation are Apache-2.0. Future operated hosting, collaboration, scheduled workloads, and support may be commercial offerings maintained separately. There is no billing or proprietary service in this repository.
+
+## Discovery and idea workspace
+
+`GET /discover` uses `videos.list` with `chart=mostPopular`, a two-letter country and a supported category. It shares search cache limits, rate limiting, concurrency and save candidates. Opening Discover performs one lookup; changing country/category performs another. There is no scheduler. Provider order and source attribution remain intact. Tags are stored only inside the expiring video metadata snapshot.
+
+The interface displays literal terms per video: provider tags, hashtags and words from title/description. ES/EN stop words, links and duplicates within that source field are excluded; outputs are capped. It does not aggregate terms across channels, calculate frequencies, process footage or claim global trend coverage.
+
+SQLite schema version 2 adds an independent `ideas` table and index; reference rows and existing notes remain intact. Ideas contain creator-written text and at most ten source IDs, with no provider metadata snapshot. Lists use 20-item pages. Search treats the title query literally. Removing a reference preserves its link in an idea but removes its observations from subsequent exports. Source observations are loaded from their current saved reference, not copied into idea storage.
+
+Idea editing has explicit save feedback and guards for unsaved navigation/browser closure. Creator observations can be copied into concept fields with an overwrite confirmation. Export uses saved data and excludes API metadata. The concept may then be developed manually with Claude; no model key or additional runtime dependency is introduced.
+
+## Development runtime
+
+`web/dev.mjs` starts an independently compiled Go backend and Vite, both on OS-assigned loopback ports. Vite serves the source UI with HMR and proxies only `/api/` to Go. A development middleware restricts Host, Origin and Fetch Metadata before forwarding; the proxy rewrites the accepted request's Origin to the backend origin. Bearer authentication remains enforced by Go. Filesystem serving is restricted to the web project and Vite CORS is disabled.
+
+The launch token remains in memory and the initial browser fragment; the runner suppresses backend stdout and never prints it. Vite and the child backend stop together. Development uses an isolated data directory by default. Production neither imports the runner nor requires Node/Vite. Backend source changes require restarting the development runner.

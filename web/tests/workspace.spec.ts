@@ -170,3 +170,79 @@ test('presets keep displayed results and pagination tied to applied filters', as
   await page.setViewportSize({ width: 390, height: 844 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
+
+test('discover terms and combine references into a persistent idea', async ({ page }) => {
+  await page.getByRole('button', { name: 'Discover', exact: true }).click()
+  await expect(page.locator('.discovery-row')).toHaveCount(3)
+  await expect(
+    page.getByText('Terms from popular videos, grouped by source.', { exact: false }),
+  ).toBeVisible()
+  await page.screenshot({ path: '../work/screenshots/discover.png', fullPage: true })
+  await page
+    .locator('.discovery-row')
+    .first()
+    .getByRole('button', { name: 'animation', exact: true })
+    .click()
+  await expect(page.getByRole('textbox', { name: 'Search YouTube', exact: true })).toHaveValue(
+    'animation',
+  )
+  await expect(page.locator('.result-row')).toHaveCount(2)
+  for (let i = 0; i < 2; i++) {
+    const row = page.locator('.result-row').nth(i)
+    const save = row.getByRole('button', { name: 'Save reference', exact: true })
+    if (await save.count()) await save.click()
+  }
+  await page.getByRole('button', { name: /View details: The shadow/ }).click()
+  await page.getByText('Keywords and hashtags', { exact: true }).click()
+  await expect(page.getByRole('button', { name: '#Historia', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Analysis', exact: true }).click()
+  await page.getByLabel('Hook', { exact: true }).fill('A warning appears before the danger')
+  await page
+    .getByLabel('Structure', { exact: true })
+    .fill('Warning, failed escape, unexpected helper')
+  await page.getByRole('button', { name: 'Save analysis', exact: true }).click()
+  await expect(page.getByText('Analysis and notes saved', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: /^Saved/ }).click()
+  const checks = page.getByRole('checkbox', { name: /Select for export/ })
+  await checks.nth(0).check()
+  await checks.nth(1).check()
+  await page.getByRole('button', { name: 'Combine into idea', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Ideas', exact: true })).toBeVisible()
+  await page.getByLabel('Idea title', { exact: true }).fill('The warning reflection')
+  await page.getByRole('button', { name: 'Use hook', exact: true }).click()
+  await expect(page.getByLabel('Opening hook', { exact: true })).toHaveValue(
+    'A warning appears before the danger',
+  )
+  await page
+    .getByLabel('Original twist', { exact: true })
+    .fill('The reflection is trying to escape us')
+  await expect(page.getByRole('button', { name: 'Export for Claude', exact: true })).toBeDisabled()
+  await page.getByRole('button', { name: 'Save idea', exact: true }).click()
+  await expect(page.getByText('Idea saved', { exact: true })).toBeVisible()
+  await page.screenshot({ path: '../work/screenshots/ideas.png', fullPage: true })
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export for Claude', exact: true }).click()
+  const download = await downloadPromise
+  const text = await readFile((await download.path())!, 'utf8')
+  expect(text).toContain('The reflection is trying to escape us')
+  expect(text).toContain('fixture0001')
+  expect(text).not.toContain('Synthetic reference')
+  await page.reload()
+  await page.getByRole('button', { name: 'Ideas', exact: true }).click()
+  await page.getByRole('button', { name: /The warning reflection/ }).click()
+  await expect(page.getByLabel('Original twist', { exact: true })).toHaveValue(
+    'The reflection is trying to escape us',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  await page.screenshot({ path: '../work/screenshots/ideas-mobile.png', fullPage: true })
+  await page.getByLabel('Notes', { exact: true }).fill('Unsaved detail')
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page.getByRole('button', { name: 'Explore', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Ideas', exact: true })).toBeVisible()
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Delete idea', exact: true }).click()
+  await expect(page.getByText('Idea deleted', { exact: true })).toBeVisible()
+})

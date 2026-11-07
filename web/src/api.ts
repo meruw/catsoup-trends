@@ -3,6 +3,7 @@ export interface Video {
   title: string
   channel: string
   channelId: string
+  tags?: string[]
   description: string
   thumbnail: string
   publishedAt: string
@@ -100,4 +101,24 @@ export function duration(v: string) {
   return h
     ? h + ':' + String(min).padStart(2, '0') + ':' + String(s).padStart(2, '0')
     : min + ':' + String(s).padStart(2, '0')
+}
+
+export interface Idea {
+  id: string
+  title: string
+  sources: string[]
+  hook: string
+  structure: string
+  twist: string
+  world: string
+  notes: string
+  updatedAt: string
+}
+export function downloadMarkdown(markdown: string, name: string) {
+  const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }))
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = name
+  anchor.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }

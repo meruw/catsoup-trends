@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import {
+  Compass,
+  Lightbulb,
   Search,
   Bookmark,
   Settings,
@@ -13,8 +15,16 @@ import {
   Download,
 } from '@lucide/vue'
 import { count, date, duration } from './api'
+import Discover from './Discover.vue'
+import Ideas from './Ideas.vue'
+import VideoTerms from './VideoTerms.vue'
 import { useWorkspace } from './useWorkspace'
 const {
+  ideaDirty,
+  ideaSeed,
+  combineIdeas,
+  searchTerm,
+  loadCount,
   tab,
   status,
   query,
@@ -83,15 +93,25 @@ const {
         >CATsoup<span>Trends</span></a
       >
       <nav aria-label="Main navigation">
+        <button :class="{ active: tab === 'discover' }" @click="switchTab('discover')">
+          <Compass /><span>Discover</span>
+        </button>
         <button :class="{ active: tab === 'explore' }" @click="switchTab('explore')">
           <Search /><span>Explore</span>
         </button>
         <button :class="{ active: tab === 'saved' }" @click="switchTab('saved')">
           <Bookmark /><span>Saved</span><span class="nav-count">{{ total }}</span>
         </button>
+        <button :class="{ active: tab === 'ideas' }" @click="switchTab('ideas')">
+          <Lightbulb /><span>Ideas</span>
+        </button>
       </nav>
       <div class="sidebar-bottom">
-        <button :class="{ active: tab === 'settings' }" @click="switchTab('settings')">
+        <button
+          aria-label="Settings"
+          :class="{ active: tab === 'settings' }"
+          @click="switchTab('settings')"
+        >
           <Settings /><span>Settings</span>
         </button>
         <div class="local">
@@ -113,7 +133,21 @@ const {
         ><button class="icon-button" aria-label="Dismiss error" @click="error = ''"><X /></button>
       </div>
       <div class="toast" role="status" aria-live="polite">{{ feedback }}</div>
-      <template v-if="tab !== 'settings'">
+      <Discover
+        v-if="tab === 'discover'"
+        :configured="!!status?.keyConfigured"
+        @search="searchTerm"
+        @saved="loadCount"
+        @settings="switchTab('settings')"
+      />
+      <Ideas
+        v-else-if="tab === 'ideas'"
+        :seed="ideaSeed"
+        @dirty="ideaDirty = $event"
+        @consumed="ideaSeed = []"
+        @saved-references="switchTab('saved')"
+      />
+      <template v-else-if="tab !== 'settings'">
         <header class="page-header">
           <h1>{{ tab === 'explore' ? 'Explore YouTube' : 'Saved references' }}</h1>
           <span v-if="tab === 'explore'" class="source-label">YouTube Data API</span
@@ -230,6 +264,9 @@ const {
           ><span v-if="cached && searched"> · Cached results</span>
         </p>
         <div class="selection-bar" v-else>
+          <button v-if="exportIDs.size" :disabled="dirty" @click="combineIdeas">
+            Combine into idea
+          </button>
           <span>{{
             exportIDs.size
               ? exportIDs.size + ' selected for export'
@@ -413,6 +450,10 @@ const {
                   <dd>{{ date(selected.video.observedAt) }}</dd>
                 </div>
               </dl>
+              <details v-if="selected.video" class="description">
+                <summary>Keywords and hashtags</summary>
+                <VideoTerms :video="selected.video" @search="searchTerm" />
+              </details>
               <details v-if="selected.video?.description" class="description">
                 <summary>Description</summary>
                 <p>{{ selected.video.description }}</p>

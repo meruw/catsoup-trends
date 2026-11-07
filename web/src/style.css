@@ -718,7 +718,7 @@ main {
     position: static;
     padding: 16px;
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr auto;
     align-items: center;
     gap: 16px;
     border-right: 0;
@@ -732,9 +732,11 @@ main {
     font-size: 12px;
   }
   .sidebar nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
     display: flex;
     margin: 0;
-    justify-content: end;
+    justify-content: space-between;
   }
   .sidebar nav button {
     width: auto;
@@ -755,6 +757,8 @@ main {
     display: none;
   }
   .sidebar-bottom {
+    grid-column: 2;
+    grid-row: 1;
     margin: 0;
   }
   main {
@@ -884,4 +888,218 @@ main {
 .reference-export span {
   font-size: 12px;
   color: var(--secondary);
+}
+
+/* Research surfaces: source first, actions secondary. */
+.discovery-controls {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.discovery-controls label {
+  display: grid;
+  gap: 8px;
+  min-width: 180px;
+}
+.discovery-scope {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 16px 0;
+}
+.discovery-scope p {
+  max-width: 760px;
+  line-height: 1.6;
+}
+.discovery-row {
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr) 40px;
+  gap: 20px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+.discovery-thumb img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.discovery-copy {
+  min-width: 0;
+}
+.discovery-copy .video-title {
+  display: inline;
+  text-decoration: none;
+  color: inherit;
+}
+.discovery-copy svg {
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+}
+.discovery-copy .meta {
+  margin: 8px 0 12px;
+}
+.term-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.term-list button {
+  padding: 4px 8px;
+  min-height: 28px;
+  font-size: 12px;
+  background: transparent;
+  border-radius: 4px;
+}
+.video-terms h3 {
+  font-size: 15px;
+  margin: 16px 0 8px;
+}
+.term-group {
+  margin: 20px 0;
+}
+.term-group h4 {
+  font-weight: 500;
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+.idea-workspace {
+  display: grid;
+  gap: 32px;
+}
+.idea-workspace.has-editor {
+  grid-template-columns: minmax(220px, 1fr) minmax(320px, 1.5fr);
+}
+.idea-row {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 20px 12px;
+  background: transparent;
+}
+.idea-row strong {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.idea-row.selected {
+  background: var(--surface);
+}
+.idea-list .search-bar input {
+  min-width: 0;
+  width: 100%;
+}
+.idea-editor {
+  border-left: 1px solid var(--line);
+  padding-left: 32px;
+  min-width: 0;
+}
+.idea-editor fieldset {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.idea-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.idea-sources summary {
+  font-size: 13px;
+}
+.idea-source {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.source-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+}
+.source-heading a {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.source-heading svg {
+  width: 12px;
+  height: 12px;
+}
+.idea-source dl {
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+.idea-source dl div {
+  margin-top: 12px;
+}
+.idea-source dt {
+  text-transform: capitalize;
+  color: var(--muted);
+}
+.idea-source dd {
+  margin: 4px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.source-note {
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+@media (max-width: 800px) {
+  .idea-workspace.has-editor {
+    grid-template-columns: 1fr;
+  }
+  .idea-editor {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+  }
+  .discovery-row {
+    grid-template-columns: 88px minmax(0, 1fr) 32px;
+    gap: 12px;
+  }
+  .discovery-controls label {
+    min-width: 140px;
+    flex: 1;
+  }
+}
+
+.idea-row {
+  justify-items: start;
+  justify-content: stretch;
+}
+.idea-sources[open] {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+.term-list button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.idea-editor .detail-top {
+  margin-bottom: 20px;
+}
+@media (max-width: 700px) {
+  .idea-sources[open] {
+    max-height: 240px;
+  }
+  .discovery-row .term-list {
+    margin-left: -100px;
+    padding-top: 12px;
+  }
+  .idea-workspace.has-editor .idea-list {
+    display: none;
+  }
 }

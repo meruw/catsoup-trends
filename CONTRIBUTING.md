@@ -27,6 +27,22 @@ go vet ./...
 
 Build the UI before `go test ./...` because the executable embeds its output.
 
+## Interface development with hot reload
+
+Install locked frontend dependencies once (`npm ci` in `web`), then run:
+
+```powershell
+./scripts/dev.ps1
+```
+
+The script accepts `-GoExe`, `-NodeDir` and `-DataDir`. It compiles a separate backend into ignored `work/dev-bin`, starts Vite on an available loopback port, and opens the authenticated browser session. Vue and CSS edits update through Vite HMR. Stop with Ctrl+C and restart for Go changes. If no embedded frontend build exists, the launcher creates one for the Go embed requirement.
+
+By default, development uses isolated `work/dev-data`, so test ideas and keys do not modify the normal app's data. To work with your normal library, stop the normal server first and explicitly pass `-DataDir "$env:APPDATA/CATsoup Trends"`. The normal executable remains a single embedded app and has no Node/Vite runtime dependency.
+
+On other platforms, run `npm run dev` in `web` with Go on PATH. Optional environment settings are `TRENDS_GO_EXE`, `TRENDS_DEV_DATA_DIR` and `TRENDS_DEV_NO_BROWSER=1`. Provider keys retain the same backend-only handling. The development launcher does not print private session URLs. Do not expose Vite on a public network.
+
+The hot-reload test starts a synthetic backend and an isolated Vite instance, temporarily changes one CSS rule, checks that input survives, restores the file, and verifies API authentication and cross-origin rejection.
+
 ## Browser tests
 
 The test host uses the real API and SQLite with a synthetic YouTube adapter. It does not require a provider key or publish content.

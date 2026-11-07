@@ -21,6 +21,8 @@ The launcher opens your browser. A single Go process serves the interface and AP
 
 You can also run `bin/CATsoupTrends.exe` directly. Its `-no-browser` flag prints a private launch URL. Do not share that URL: its fragment contains the local session credential.
 
+For UI development, use `./scripts/dev.ps1` after installing frontend dependencies. It opens the web interface with hot reload and uses separate development data by default. See [development setup](CONTRIBUTING.md#interface-development-with-hot-reload).
+
 ## Set up YouTube
 
 1. Enable **YouTube Data API v3** in your Google Cloud project.
@@ -41,7 +43,7 @@ Searches use your Google project quota. Trends makes no paid AI calls. Check you
 
 Export one saved reference directly from its detail panel, or select up to 10 in Saved for a combined brief. Save pending analysis edits before exporting. Clear selection resets only the export selection.
 
-Trends does not watch footage, infer retention, predict virality, or rank trending hashtags. Keywords are your labels; generated keyword suggestions in Claude are not verified trends.
+Trends does not watch footage, infer retention, predict virality, or rank trending hashtags. Creator keywords are your labels; source terms remain attributed to each video. Keyword suggestions from Claude are not verified trends.
 
 ## Data and privacy
 
@@ -65,3 +67,12 @@ The local server validates Host and Origin and requires a random session credent
 [Apache-2.0](LICENSE). See [NOTICE](NOTICE) and [third-party notices](THIRD_PARTY_NOTICES.txt). The license does not grant rights to third-party videos, platform data, or trademarks.
 
 Provider use is subject to the [YouTube API policies](https://developers.google.com/youtube/terms/developer-policies), [YouTube terms](https://www.youtube.com/t/terms), and [Google privacy policy](https://policies.google.com/privacy).
+
+## Discover, terms and ideas
+
+- **Discover** loads YouTube's popular chart when opened, without a query. Choose a country and category. Requests are cached for ten minutes and are never polled in the background.
+- Terms appear with their source video. Click one to search. In a reference, **Keywords and hashtags** separates provider tags, hashtags, title words and description words. Word extraction is a literal, bounded ES/EN stop-word filter; it does not listen to the video, infer topics or rank terms.
+- In **Saved**, select up to ten references and choose **Combine into idea**. Use your recorded hook, structure or twist as a starting point, add your original concept, and save it in **Ideas**. New ideas can also start without references.
+- **Export for Claude** downloads your saved concept, creator-authored observations and source links. No model runs and no export is sent automatically. Save edits before exporting. You can record Claude's resulting concept in the idea fields.
+
+YouTube's `mostPopular` chart covers music, movies and gaming, including long videos. It is not a global list of trending searches or Shorts. There is no cross-channel frequency ranking, keyword search volume, or claim that a listed term makes a video viral. The [official chart change](https://developers.google.com/youtube/data/revision_history#july-10-2025) and [data policies](https://developers.google.com/youtube/terms/developer-policies) define this boundary.

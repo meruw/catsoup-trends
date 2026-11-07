@@ -25,7 +25,11 @@ func Open(path string) (*Store, error) {
  saved_at TEXT NOT NULL, metadata TEXT, observed_at TEXT, analysis TEXT NOT NULL DEFAULT '{}',
  PRIMARY KEY(workspace,video_id));
  CREATE INDEX IF NOT EXISTS references_order ON references_saved(workspace,saved_at DESC,video_id);
- PRAGMA user_version=1;`)
+ CREATE TABLE IF NOT EXISTS ideas (
+ workspace TEXT NOT NULL, id TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, updated_at TEXT NOT NULL,
+ PRIMARY KEY(workspace,id));
+ CREATE INDEX IF NOT EXISTS ideas_order ON ideas(workspace,updated_at DESC,id);
+ PRAGMA user_version=2;`)
 	if e != nil {
 		db.Close()
 		return nil, e

@@ -13,6 +13,7 @@ import (
 )
 
 var VideoID = regexp.MustCompile(`^[A-Za-z0-9_-]{11}$`)
+var countryCode = regexp.MustCompile(`^[A-Z]{2}$`)
 
 type YouTube struct {
 	Client  *http.Client
@@ -51,6 +52,8 @@ func (y *YouTube) get(ctx context.Context, key, endpoint string, values url.Valu
 		_ = json.Unmarshal(body, &detail)
 		for _, e := range detail.Error.Errors {
 			switch e.Reason {
+			case "videoChartNotFound":
+				return &Error{"chart_unavailable", "YouTube has no popular chart for this country and category. Choose another combination", 404}
 			case "quotaExceeded", "dailyLimitExceeded", "rateLimitExceeded":
 				return &Error{"quota_exceeded", "YouTube quota is exhausted or temporarily limited. Check your Google Cloud quota before retrying", 429}
 			case "keyInvalid", "accessNotConfigured", "ipRefererBlocked", "forbidden":
@@ -155,10 +158,32 @@ func (y *YouTube) Videos(ctx context.Context, key string, ids []string) ([]Video
 			return nil, &Error{"invalid_video", "Invalid YouTube video ID", 400}
 		}
 	}
+	page, err := y.videoPage(ctx, key, url.Values{"part": {"snippet,contentDetails,statistics"}, "id": {strings.Join(ids, ",")}})
+	return page.Items, err
+}
+func ValidateDiscovery(region, category, page string) error {
+	if !countryCode.MatchString(region) || !oneOf(category, "0", "10", "20", "24") || len(page) > 512 {
+		return &Error{"invalid_query", "Choose a two-letter country and a supported category", 400}
+	}
+	return nil
+}
+func (y *YouTube) Popular(ctx context.Context, key, region, category, page string) (Page, error) {
+	if err := ValidateDiscovery(region, category, page); err != nil {
+		return Page{}, err
+	}
+	values := url.Values{"part": {"snippet,contentDetails,statistics"}, "chart": {"mostPopular"}, "regionCode": {region}, "videoCategoryId": {category}, "maxResults": {"20"}}
+	if page != "" {
+		values.Set("pageToken", page)
+	}
+	return y.videoPage(ctx, key, values)
+}
+func (y *YouTube) videoPage(ctx context.Context, key string, values url.Values) (Page, error) {
 	var response struct {
+		Next  string `json:"nextPageToken"`
 		Items []struct {
 			ID      string `json:"id"`
 			Snippet struct {
+				Tags         []string  `json:"tags"`
 				Title        string    `json:"title"`
 				ChannelTitle string    `json:"channelTitle"`
 				ChannelID    string    `json:"channelId"`
@@ -178,8 +203,8 @@ func (y *YouTube) Videos(ctx context.Context, key string, ids []string) ([]Video
 			} `json:"statistics"`
 		} `json:"items"`
 	}
-	if err := y.get(ctx, key, "videos", url.Values{"part": {"snippet,contentDetails,statistics"}, "id": {strings.Join(ids, ",")}}, &response); err != nil {
-		return nil, err
+	if err := y.get(ctx, key, "videos", values, &response); err != nil {
+		return Page{}, err
 	}
 	out := []Video{}
 	for _, v := range response.Items {
@@ -191,7 +216,7 @@ func (y *YouTube) Videos(ctx context.Context, key string, ids []string) ([]Video
 		if e != nil || u.Scheme != "https" || u.Host != "i.ytimg.com" {
 			thumb = ""
 		}
-		out = append(out, Video{ID: v.ID, Title: v.Snippet.Title, Channel: v.Snippet.ChannelTitle, ChannelID: v.Snippet.ChannelID, Description: v.Snippet.Description, Thumbnail: thumb, PublishedAt: v.Snippet.PublishedAt, ObservedAt: time.Now().UTC(), Duration: v.ContentDetails.Duration, Views: v.Statistics.Views, Likes: v.Statistics.Likes, Comments: v.Statistics.Comments})
+		out = append(out, Video{ID: v.ID, Tags: v.Snippet.Tags, Title: v.Snippet.Title, Channel: v.Snippet.ChannelTitle, ChannelID: v.Snippet.ChannelID, Description: v.Snippet.Description, Thumbnail: thumb, PublishedAt: v.Snippet.PublishedAt, ObservedAt: time.Now().UTC(), Duration: v.ContentDetails.Duration, Views: v.Statistics.Views, Likes: v.Statistics.Likes, Comments: v.Statistics.Comments})
 	}
-	return out, nil
+	return Page{Items: out, NextPage: response.Next}, nil
 }

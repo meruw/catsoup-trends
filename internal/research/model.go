@@ -7,6 +7,7 @@ type Video struct {
 	Title       string    `json:"title"`
 	Channel     string    `json:"channel"`
 	ChannelID   string    `json:"channelId"`
+	Tags        []string  `json:"tags"`
 	Description string    `json:"description"`
 	Thumbnail   string    `json:"thumbnail"`
 	PublishedAt time.Time `json:"publishedAt"`
