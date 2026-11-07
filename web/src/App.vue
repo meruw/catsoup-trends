@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import {
   Compass,
+  TrendingUp,
+  ListVideo,
   Lightbulb,
   Search,
   Bookmark,
@@ -16,10 +18,15 @@ import {
 } from '@lucide/vue'
 import { count, date, duration } from './api'
 import Discover from './Discover.vue'
+import Topics from './Topics.vue'
+import Formats from './Formats.vue'
 import Ideas from './Ideas.vue'
 import VideoTerms from './VideoTerms.vue'
 import { useWorkspace } from './useWorkspace'
 const {
+  formatDirty,
+  formatSeed,
+  createFormat,
   ideaDirty,
   ideaSeed,
   combineIdeas,
@@ -93,6 +100,12 @@ const {
         >CATsoup<span>Trends</span></a
       >
       <nav aria-label="Main navigation">
+        <button :class="{ active: tab === 'topics' }" @click="switchTab('topics')">
+          <TrendingUp /><span>Topics</span>
+        </button>
+        <button :class="{ active: tab === 'formats' }" @click="switchTab('formats')">
+          <ListVideo /><span>Formats</span>
+        </button>
         <button :class="{ active: tab === 'discover' }" @click="switchTab('discover')">
           <Compass /><span>Discover</span>
         </button>
@@ -133,8 +146,18 @@ const {
         ><button class="icon-button" aria-label="Dismiss error" @click="error = ''"><X /></button>
       </div>
       <div class="toast" role="status" aria-live="polite">{{ feedback }}</div>
+      <Topics v-if="tab === 'topics'" @search="searchTerm" @format="createFormat" />
+      <Formats
+        v-else-if="tab === 'formats'"
+        :configured="!!status?.keyConfigured"
+        :seed="formatSeed"
+        @dirty="formatDirty = $event"
+        @consumed="formatSeed = ''"
+        @saved="loadCount"
+        @settings="switchTab('settings')"
+      />
       <Discover
-        v-if="tab === 'discover'"
+        v-else-if="tab === 'discover'"
         :configured="!!status?.keyConfigured"
         @search="searchTerm"
         @saved="loadCount"

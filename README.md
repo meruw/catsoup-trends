@@ -1,6 +1,6 @@
 # CATsoup Trends
 
-A local research workspace for finding YouTube references and developing original short-animation ideas. Search, inspect available metrics, save videos, write observations, and export a creative brief for Claude.
+A local research workspace for popular search topics, custom video formats, and original short-animation ideas. Follow your own YouTube queries, inspect source metrics, save references, and export a creative brief for Claude.
 
 **Status: working proof of concept.** Windows is the validated platform. No stable release or hosted service is available.
 
@@ -36,6 +36,9 @@ Searches use your Google project quota. Trends makes no paid AI calls. Check you
 
 ## Research workflow
 
+- **Topics:** Google Trends RSS topics by country, with source-provided approximate search traffic and dates. Loads without an API key or a typed query. Filter the loaded list, open the source, find related YouTube videos, or create an editable format. This feed covers trending Google searches related to current events, not Shorts performance. Provider order is preserved; no growth percentage is invented.
+- **Formats:** create a named YouTube query with language preference, publication window, ordering and length. Open it to check current results; expand a video for source metrics or save it to your references. Edit and delete formats independently of saved videos. Up to 100 formats are stored locally. Checks are on demand, not a background subscription; searches use the existing API quota and 10-minute cache.
+
 - **Explore:** start with Recent popular (last 30 days, most viewed) or All-time references. Filters offer relevance/views/date sorting, publication windows, language preference, and an optional under-four-minute filter. The summary describes the applied search; changed controls show a pending notice until Search is pressed. That duration filter does **not** identify Shorts reliably.
 - **Details:** inspect source-provided views, likes, comments, publication date, and observation date. Missing metrics stay missing. Watch the actual video on YouTube.
 - **Saved:** keep references and write your own hook, structure, twist, adaptation, keywords, and notes. Fields have explicit save feedback and unsaved-change protection.
@@ -49,9 +52,11 @@ Trends does not watch footage, infer retention, predict virality, or rank trendi
 
 The default Windows data directory is `%APPDATA%/CATsoup Trends`. It contains `trends.db` and, when configured, `youtube.key`. Override it with `-data-dir`.
 
-Search terms and your API key go to Google. Thumbnail requests go from your browser to YouTube. Videos open on YouTube only when you choose to watch them. Notes and creative analysis remain local until you export or share them yourself.
+Opening Topics sends the selected country to Google Trends, without a YouTube key. Opening a format sends its saved search query and API key to YouTube. Search terms and your API key go to Google. Thumbnail requests go from your browser to YouTube. Videos open on YouTube only when you choose to watch them. Notes and creative analysis remain local until you export or share them yourself.
 
-Only the latest provider metadata is stored. It is cleared after 29 days by startup/read/hourly cleanup while the app runs; if the app is closed, cleanup resumes on its next launch. Your bookmarks and written observations remain. Refresh retrieves current details. Exports omit API titles, descriptions, thumbnails, and metrics. Back up your own research responsibly; backups are not cleaned by the app.
+Topic feeds stay in a bounded in-memory cache (10 minutes fresh, up to 24 hours as an explicitly marked fallback if the provider fails); they disappear when the process exits. Formats store your authored query and filters, plus the last successful lookup time. They do not store historical view counts.
+
+Only the latest YouTube provider metadata is stored. It is cleared after 29 days by startup/read/hourly cleanup while the app runs; if the app is closed, cleanup resumes on its next launch. Your bookmarks and written observations remain. Refresh retrieves current details. Exports omit API titles, descriptions, thumbnails, and metrics. Back up your own research responsibly; backups are not cleaned by the app.
 
 The local server validates Host and Origin and requires a random session credential for API access. It is **not** designed for public hosting or remote access.
 

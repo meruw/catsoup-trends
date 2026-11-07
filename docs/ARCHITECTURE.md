@@ -8,7 +8,7 @@ Trends is a standalone research product. Publisher, animation tools, and paid mo
 | --- | --- |
 | Interface | Vue 3, TypeScript, Vite build; system fonts and Lucide icons |
 | API | Go net/http under /api/v1; same origin as the interface |
-| Research | YouTube adapter, reference storage, editable analysis, Markdown export |
+| Research | Google Trends RSS, saved format queries, YouTube adapter, reference storage, editable analysis, Markdown export |
 | Storage | SQLite, one local workspace, latest metadata per saved reference |
 | Packaging | Frontend embedded in one Go executable; Node needed only for builds |
 
@@ -82,3 +82,16 @@ Idea editing has explicit save feedback and guards for unsaved navigation/browse
 `web/dev.mjs` starts an independently compiled Go backend and Vite, both on OS-assigned loopback ports. Vite serves the source UI with HMR and proxies only `/api/` to Go. A development middleware restricts Host, Origin and Fetch Metadata before forwarding; the proxy rewrites the accepted request's Origin to the backend origin. Bearer authentication remains enforced by Go. Filesystem serving is restricted to the web project and Vite CORS is disabled.
 
 The launch token remains in memory and the initial browser fragment; the runner suppresses backend stdout and never prints it. Vite and the child backend stop together. Development uses an isolated data directory by default. Production neither imports the runner nor requires Node/Vite. Backend source changes require restarting the development runner.
+
+
+## Topics and saved formats
+
+`GET /topics?region=MX` retrieves the public Google Trends RSS feed through a fixed HTTPS endpoint. The provider adapter uses Go's XML decoder, a 15-second timeout, a 2 MiB response bound, no redirects and a two-letter country validator. External URLs in the feed are ignored; source links are built from the validated region and escaped topic. Rendering uses Vue text bindings, never feed HTML. No new runtime dependency or paid service is introduced.
+
+A separate bounded in-memory cache holds up to 16 countries. Entries are fresh for 10 minutes; provider failures may return the last successful entry for up to 24 hours with `stale: true` and the original observation timestamp. Empty valid feeds remain empty; malformed responses are errors. The same local auth, origin checks, request limiter and provider concurrency limit apply. The endpoint requires no YouTube credential.
+
+Schema version 3 adds a separate `formats` table in the local workspace. Existing reference and idea data are preserved. Each format stores a creator-authored name, YouTube query, language preference, publication window, order, duration, update time and last successful lookup time. Create/update validation reuses the search contract. The workspace is limited to 100 formats; deletion affects only the format. Changing a query or its options clears its previous check timestamp.
+
+`GET /formats/{id}/results` loads the saved query server-side and uses the existing authenticated YouTube search path, cache, rate limiter and reference candidate store. Only the page token comes from the request. No poller, historical metrics archive, derived score or cross-channel keyword ranking is added. Results are current source totals, not evidence of growth. Each view aborts obsolete network lookups; unsaved format edits use the workspace navigation and tab-close guards.
+
+Google Trends source: https://support.google.com/trends/answer/3076011?hl=en. TikTok Creative Center and YouTube Studio are optional outbound links, not imported data sources.

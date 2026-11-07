@@ -25,6 +25,8 @@ type cached struct {
 	At   time.Time
 }
 type Server struct {
+	Trends                       *research.GoogleTrends
+	topicsCache                  map[string]research.TopicsPage
 	Store                        *research.Store
 	YouTube                      *research.YouTube
 	Token, Origin, Host, DataDir string
@@ -45,7 +47,7 @@ func New(store *research.Store, dataDir string) (*Server, error) {
 	if _, err := rand.Read(b); err != nil {
 		return nil, err
 	}
-	s := &Server{Store: store, YouTube: research.NewYouTube(), Token: hex.EncodeToString(b), DataDir: dataDir, cache: map[research.Query]cached{}, videos: map[string]research.Video{}, slots: make(chan struct{}, 2)}
+	s := &Server{Trends: research.NewGoogleTrends(), topicsCache: map[string]research.TopicsPage{}, Store: store, YouTube: research.NewYouTube(), Token: hex.EncodeToString(b), DataDir: dataDir, cache: map[research.Query]cached{}, videos: map[string]research.Video{}, slots: make(chan struct{}, 2)}
 	s.key = strings.TrimSpace(os.Getenv("TRENDS_YOUTUBE_API_KEY"))
 	s.envKey = s.key != ""
 	if !s.envKey {
@@ -65,6 +67,12 @@ func (s *Server) Handler(assets fs.FS) http.Handler {
 	mux.HandleFunc("DELETE /api/v1/settings/youtube", s.removeKey)
 	mux.HandleFunc("GET /api/v1/search", s.search)
 	mux.HandleFunc("GET /api/v1/discover", s.discover)
+	mux.HandleFunc("GET /api/v1/topics", s.topics)
+	mux.HandleFunc("GET /api/v1/formats", s.listFormats)
+	mux.HandleFunc("POST /api/v1/formats", s.saveFormat)
+	mux.HandleFunc("PUT /api/v1/formats/{id}", s.saveFormat)
+	mux.HandleFunc("DELETE /api/v1/formats/{id}", s.deleteFormat)
+	mux.HandleFunc("GET /api/v1/formats/{id}/results", s.formatResults)
 	mux.HandleFunc("GET /api/v1/ideas", s.listIdeas)
 	mux.HandleFunc("POST /api/v1/ideas", s.saveIdea)
 	mux.HandleFunc("PUT /api/v1/ideas/{id}", s.saveIdea)
@@ -246,36 +254,39 @@ func (s *Server) acquire(w http.ResponseWriter) bool {
 func (s *Server) search(w http.ResponseWriter, r *http.Request) {
 	v := r.URL.Query()
 	q := research.Query{Text: v.Get("q"), Order: v.Get("order"), Duration: v.Get("duration"), Period: v.Get("period"), Language: v.Get("language"), Page: v.Get("page")}
+	s.searchQuery(w, r, q)
+}
+func (s *Server) searchQuery(w http.ResponseWriter, r *http.Request, q research.Query) bool {
 	if err := research.ValidateQuery(&q); err != nil {
 		fail(w, err)
-		return
+		return false
 	}
 	key, gen := s.credentials()
 	if key == "" {
 		fail(w, &research.Error{Code: "key_required", Message: "Add a YouTube API key in Settings to search", Status: 409})
-		return
+		return false
 	}
 	s.mu.Lock()
 	hit, ok := s.cache[q]
 	s.mu.Unlock()
 	if ok && time.Since(hit.At) < 10*time.Minute {
 		s.searchReply(w, r, hit.Page, true)
-		return
+		return true
 	}
 	if !s.acquire(w) {
-		return
+		return false
 	}
 	defer func() { <-s.slots }()
 	page, err := s.YouTube.Search(r.Context(), key, q)
 	if err != nil {
 		fail(w, err)
-		return
+		return false
 	}
 	s.mu.Lock()
 	if gen != s.generation {
 		s.mu.Unlock()
 		fail(w, &research.Error{Code: "settings_changed", Message: "Settings changed. Search again", Status: 409})
-		return
+		return false
 	}
 	s.verified = true
 	if len(s.cache) >= 20 {
@@ -290,6 +301,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Unlock()
 	s.searchReply(w, r, page, false)
+	return true
 }
 func (s *Server) searchReply(w http.ResponseWriter, r *http.Request, page research.Page, cache bool) {
 	// A cached search must remain saveable after another search evicts candidates.

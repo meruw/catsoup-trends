@@ -2,9 +2,9 @@
 
 ## Scope delivered
 
-The local workflow includes popular-chart discovery, YouTube search, literal source terms, pagination, optional filters, current source metrics, reference saving, editable creator analysis, an idea workspace, and Markdown export for Claude. The application is independent of Publisher and has no model/API subscription dependency.
+The local workflow includes Google search topics, editable saved format queries, popular-chart discovery, YouTube search, literal source terms, pagination, optional filters, current source metrics, reference saving, editable creator analysis, an idea workspace, and Markdown export for Claude. The application is independent of Publisher and has no model/API subscription dependency.
 
-Discover, Explore, Saved and Ideas are the primary views. Details and analysis open in a side panel. Saved research survives process restart. Notes are manually saved, with visible confirmation and protection against discarding unsaved edits.
+Topics, Formats, Discover, Explore, Saved and Ideas are the primary views. Details and analysis open in a side panel. Saved research survives process restart. Notes are manually saved, with visible confirmation and protection against discarding unsaved edits.
 
 The app does not generate a factual video analysis by itself. The user watches the reference, records observations, and exports selected sheets. Claude can then help compare storytelling approaches and draft original ideas; missing observations must remain explicit.
 
@@ -46,10 +46,10 @@ Browser memory and real YouTube latency are not included. No large-library perfo
 
 ## Limits and next work
 
-- YouTube is the only connector.
+- YouTube supplies video references; Google Trends RSS supplies search topics. TikTok and YouTube Studio links open external tools.
 - Short-duration search is not a reliable Shorts classifier.
 - Current popularity is shown as source metrics, with no virality score or trend forecast.
-- Source terms come from video metadata; creator keywords remain separate. Global keyword rankings, search volumes and audio discovery are not implemented.
+- Source terms come from video metadata; creator keywords remain separate. Cross-channel keyword rankings and audio discovery are not implemented. Google Trends topic traffic is displayed as supplied by its RSS, separately from YouTube metrics.
 - No scraping, media downloads, transcription, local model, or Python worker.
 - One local user/workspace. No remote hosting, teams, Publisher integration, or scheduler.
 - Metadata cleanup runs only while the process is active and on next launch; user-made backups are outside that cleanup.
@@ -66,4 +66,11 @@ Discover supplies a country/category popular-video chart without a text query, w
 
 Validation includes discovery caching and source tags, saveable chart results, invalid input rejection, idea persistence after reopening SQLite, pagination, source deletion without breaking ideas, export boundaries and browser coverage of discovery-to-search, terms, combining references, editing, export, reload, unsaved navigation and mobile layout. Live discovery was verified on November 7, 2026: the Mexico Gaming chart returned 20 videos, 12 with source tags. Other region/category combinations depend on chart availability.
 
-The current frontend build is about 115 kB JavaScript (42.1 kB gzip) and 15 kB CSS (3.9 kB gzip), with no added runtime dependency. Six Playwright checks cover the existing research workflows, terms, ideas and development HMR. The HMR check confirms CSS changes without losing input, authenticated API proxying, and cross-origin rejection. The normal runtime remains a single executable; hot reload is an optional development setup.
+The current frontend build is about 133 kB JavaScript (46.6 kB gzip) and 20 kB CSS (4.8 kB gzip), with no added runtime dependency. Seven Playwright checks cover the existing research workflows, terms, ideas and development HMR. The HMR check confirms CSS changes without losing input, authenticated API proxying, and cross-origin rejection. The normal runtime remains a single executable; hot reload is an optional development setup.
+
+
+## Topic and format validation
+
+Coverage includes RSS namespaces, non-ASCII terms, source traffic, timestamps, duplicate/blank entries, malformed XML, rejected redirects and oversized responses; topic access without a YouTube key, cache reuse, labeled stale fallback and fallback expiry; format persistence, update validation, lookup using saved filters, last-check timestamps, capacity bounds and deletion without changing saved references. Browser coverage exercises topic filtering, provider errors, topic-to-format creation, editable filters, pagination, source statistics, saved references, unsaved-change protection, restart persistence, empty results, deletion and mobile layouts.
+
+The public Mexico RSS endpoint was retrieved on November 7, 2026 using normal TLS verification. No real queries, feed payloads or credentials are committed as test fixtures. Search-volume buckets belong to Google Trends; YouTube counts remain source totals with observation dates.

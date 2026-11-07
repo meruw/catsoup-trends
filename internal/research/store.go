@@ -29,7 +29,10 @@ func Open(path string) (*Store, error) {
  workspace TEXT NOT NULL, id TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, updated_at TEXT NOT NULL,
  PRIMARY KEY(workspace,id));
  CREATE INDEX IF NOT EXISTS ideas_order ON ideas(workspace,updated_at DESC,id);
- PRAGMA user_version=2;`)
+ CREATE TABLE IF NOT EXISTS formats (
+ workspace TEXT NOT NULL,id TEXT NOT NULL,name TEXT NOT NULL,body TEXT NOT NULL,last_checked TEXT NOT NULL DEFAULT '',
+ PRIMARY KEY(workspace,id));
+ PRAGMA user_version=3;`)
 	if e != nil {
 		db.Close()
 		return nil, e

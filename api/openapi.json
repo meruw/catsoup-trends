@@ -833,6 +833,239 @@
           }
         }
       }
+    },
+    "/topics": {
+      "get": {
+        "summary": "Recent Google search topics without a YouTube key; 10-minute cache and labeled 24-hour fallback",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$",
+              "default": "MX"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicsPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/formats": {
+      "get": {
+        "summary": "List up to 100 locally authored formats",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Format"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a saved format; no provider lookup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormatInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Format"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/formats/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Update a format and clear its last-check time",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormatInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Format"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete only this format; keep references",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/formats/{id}/results": {
+      "get": {
+        "summary": "Check the saved YouTube query using current totals; records successful lookup time",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{32}$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Controlled error; HTTP 400/401/403/404/408/409/415/429/500/502/503 as applicable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1160,6 +1393,190 @@
           "title"
         ],
         "description": "Creator-authored concept. Server assigns id and updatedAt. Source IDs survive removal of a reference; provider metadata is never copied into this record."
+      },
+      "Topic": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "traffic": {
+            "type": "string",
+            "description": "Approximate search traffic exactly as supplied by Google RSS; empty if absent"
+          },
+          "publishedAt": {
+            "type": "string",
+            "description": "RSS publication time, or empty if unavailable"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "title",
+          "traffic",
+          "publishedAt",
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "TopicsPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Topic"
+            },
+            "maxItems": 100
+          },
+          "region": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "stale": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "region",
+          "observedAt",
+          "cached",
+          "stale"
+        ],
+        "additionalProperties": false
+      },
+      "Format": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Maximum 200 UTF-8 bytes"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "",
+              "es",
+              "en"
+            ]
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "7",
+              "30",
+              "90",
+              "any"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "relevance",
+              "viewCount",
+              "date"
+            ]
+          },
+          "duration": {
+            "type": "string",
+            "enum": [
+              "short",
+              "any"
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "readOnly": true
+          },
+          "lastChecked": {
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "query",
+          "language",
+          "period",
+          "order",
+          "duration",
+          "updatedAt",
+          "lastChecked"
+        ],
+        "additionalProperties": false
+      },
+      "FormatInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Maximum 200 UTF-8 bytes"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "",
+              "es",
+              "en"
+            ]
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "7",
+              "30",
+              "90",
+              "any"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "relevance",
+              "viewCount",
+              "date"
+            ]
+          },
+          "duration": {
+            "type": "string",
+            "enum": [
+              "short",
+              "any"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "query"
+        ],
+        "additionalProperties": false
       }
     }
   }

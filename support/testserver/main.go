@@ -68,6 +68,16 @@ func main() {
 		panic(err)
 	}
 	app.YouTube.BaseURL = provider.URL + "/"
+	topics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/rss+xml")
+		if r.URL.Query().Get("geo") == "CA" {
+			w.WriteHeader(503)
+			return
+		}
+		fmt.Fprint(w, `<rss xmlns:ht="https://trends.google.com/trending/rss"><channel><item><title>Animation festival [test fixture]</title><ht:approx_traffic>20K+</ht:approx_traffic><pubDate>Sat, 07 Nov 2026 10:00:00 -0800</pubDate></item><item><title>Roblox story [test fixture]</title><ht:approx_traffic>5K+</ht:approx_traffic></item></channel></rss>`)
+	}))
+	defer topics.Close()
+	app.Trends.BaseURL = topics.URL
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		panic(err)

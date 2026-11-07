@@ -11,8 +11,12 @@ import {
   type Analysis,
 } from './api'
 export function useWorkspace() {
-  const tab = ref<'explore' | 'saved' | 'settings' | 'discover' | 'ideas'>('explore'),
+  const tab = ref<'explore' | 'saved' | 'settings' | 'discover' | 'ideas' | 'topics' | 'formats'>(
+      'explore',
+    ),
     status = ref<Status>()
+  const formatDirty = ref(false),
+    formatSeed = ref('')
   const ideaDirty = ref(false),
     ideaSeed = ref<string[]>([])
   const query = ref(''),
@@ -142,15 +146,20 @@ export function useWorkspace() {
     total.value = (await api<SavedPage>('/references')).total
   }
   function discardOK() {
-    return !(dirty.value || ideaDirty.value) || confirm('Discard your unsaved changes?')
+    return (
+      !(dirty.value || ideaDirty.value || formatDirty.value) ||
+      confirm('Discard your unsaved changes?')
+    )
   }
   function closeDetails() {
     if (discardOK()) selected.value = null
   }
   function switchTab(value: typeof tab.value) {
+    if (value === tab.value) return
     if (!discardOK()) return
     cancel()
     selected.value = null
+    formatDirty.value = false
     tab.value = value
     feedback.value = ''
     error.value = ''
@@ -420,7 +429,7 @@ export function useWorkspace() {
     }
   }
   function beforeLeave(e: BeforeUnloadEvent) {
-    if (dirty.value || ideaDirty.value) e.preventDefault()
+    if (dirty.value || ideaDirty.value || formatDirty.value) e.preventDefault()
   }
   onMounted(async () => {
     window.addEventListener('keydown', escape)
@@ -452,7 +461,15 @@ export function useWorkspace() {
     query.value = term.slice(0, 200)
     await searchYouTube()
   }
+  function createFormat(term: string) {
+    if (!discardOK()) return
+    formatSeed.value = term
+    switchTab('formats')
+  }
   return {
+    formatDirty,
+    formatSeed,
+    createFormat,
     ideaDirty,
     ideaSeed,
     combineIdeas,
