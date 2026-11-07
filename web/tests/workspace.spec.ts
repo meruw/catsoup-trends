@@ -59,10 +59,17 @@ test('search, paginate, save, analyze, export, restart and remove', async ({ pag
     .getByLabel('Your adaptation', { exact: true })
     .fill('A reflection warns the character about an unseen visitor')
   await page.getByLabel('Topics and keywords').fill('suspense, anticipation')
+  await expect(page.getByRole('button', { name: 'Export reference', exact: true })).toBeDisabled()
   await page.getByRole('button', { name: 'Save analysis', exact: true }).click()
   await expect(
     page.getByRole('status').filter({ hasText: 'Analysis and notes saved' }),
   ).toBeVisible()
+  const singleDownloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export reference', exact: true }).click()
+  const singleDownload = await singleDownloadPromise
+  expect(await readFile((await singleDownload.path())!, 'utf8')).toContain(
+    'The shadow reacts before the character',
+  )
   await page.getByRole('button', { name: /^Saved/ }).click()
   await expect(page.locator('.result-row')).toHaveCount(1)
   await page.getByRole('checkbox', { name: /Select for export/ }).check()
@@ -123,4 +130,43 @@ test('filters, errors, cancellation and responsive layout', async ({ page }) => 
   await page.screenshot({ path: '../work/screenshots/mobile-detail.png', fullPage: true })
   await page.getByRole('button', { name: 'Close details' }).click()
   await expect(page.getByRole('heading', { name: 'Explore YouTube' })).toBeVisible()
+})
+
+test('presets keep displayed results and pagination tied to applied filters', async ({ page }) => {
+  const searches: URL[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/api/v1/search?')) searches.push(new URL(request.url()))
+  })
+  await page.getByRole('textbox', { name: 'Search YouTube', exact: true }).fill('animation')
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
+  await expect(page.locator('.result-row')).toHaveCount(2)
+  expect(searches[0]!.searchParams.get('period')).toBe('30')
+  expect(searches[0]!.searchParams.get('order')).toBe('viewCount')
+  await expect(page.locator('.applied-summary')).toHaveText(
+    'Last 30 days · Most viewed · Under 4 minutes',
+  )
+  await page.getByRole('button', { name: 'All-time references', exact: true }).click()
+  await expect(page.getByText('Changes not applied · Search to update')).toBeVisible()
+  await expect(page.locator('.applied-summary')).toContainText('Last 30 days')
+  expect(searches.length).toBe(1)
+  await page.getByRole('button', { name: 'Load more', exact: true }).click()
+  await expect(page.locator('.result-row')).toHaveCount(3)
+  expect(searches[1]!.searchParams.get('period')).toBe('30')
+  expect(searches[1]!.searchParams.get('page')).toBe('page2')
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
+  await expect(page.locator('.result-row')).toHaveCount(2)
+  expect(searches[2]!.searchParams.get('period')).toBe('any')
+  expect(searches[2]!.searchParams.has('page')).toBe(false)
+  await expect(page.locator('.applied-summary')).toContainText('Any time')
+  await expect(page.getByText('Changes not applied · Search to update')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Filters', exact: true }).click()
+  await page.getByLabel('Published').selectOption('7')
+  await page.getByLabel('Preferred language').selectOption('es')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.locator('.applied-summary')).toHaveText(
+    'Last 7 days · Most viewed · Under 4 minutes · Spanish preferred',
+  )
+  await expect(page.locator('.result-row')).toHaveCount(2)
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })

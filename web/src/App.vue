@@ -48,6 +48,10 @@ const {
   busyIDs,
   noteBusy,
   filtersCount,
+  preset,
+  setPreset,
+  searchSummary,
+  searchPending,
   selectedSaved,
   dirty,
   rows,
@@ -117,7 +121,7 @@ const {
             v-else
             :disabled="!exportIDs.size || exportBusy"
             title="Export up to 10 selected references with an analysis prompt"
-            @click="exportBrief"
+            @click="exportBrief()"
           >
             <Download />Export for Claude<span v-if="exportIDs.size">({{ exportIDs.size }})</span>
           </button>
@@ -148,6 +152,7 @@ const {
             v-if="tab === 'explore'"
             type="button"
             class="filter-toggle"
+            aria-label="Filters"
             :aria-expanded="showFilters"
             aria-controls="search-filters"
             @click="showFilters = !showFilters"
@@ -158,6 +163,30 @@ const {
           </button>
           <button v-if="loading" type="button" class="quiet" @click="cancel">Cancel</button>
         </form>
+        <div
+          v-if="tab === 'explore'"
+          class="search-presets"
+          role="group"
+          aria-label="Search presets"
+        >
+          <button
+            :aria-pressed="preset === 'recent'"
+            title="Videos published in the last 30 days, ordered by views"
+            @click="setPreset('recent')"
+          >
+            Recent popular
+          </button>
+          <button
+            :aria-pressed="preset === 'all'"
+            title="Popular references from any publication date"
+            @click="setPreset('all')"
+          >
+            All-time references
+          </button>
+          <span v-if="searchPending" class="pending-search" role="status"
+            >Changes not applied · Search to update</span
+          >
+        </div>
         <form
           v-if="showFilters && tab === 'explore'"
           id="search-filters"
@@ -192,14 +221,24 @@ const {
           <label class="checkbox"><input v-model="short" type="checkbox" />Under 4 minutes</label
           ><button type="submit">Apply</button>
         </form>
-        <p class="search-hint" v-if="tab === 'explore'">
-          {{
-            short
-              ? 'Short videos · under 4 minutes. Includes videos that are not Shorts.'
-              : 'All video lengths'
-          }}<span v-if="cached && searched"> · Cached results</span>
+        <p
+          class="search-hint"
+          v-if="tab === 'explore'"
+          title="Publication date and total views do not measure current growth. Under 4 minutes can include videos that are not Shorts."
+        >
+          <span class="applied-summary">{{ searchSummary }}</span
+          ><span v-if="cached && searched"> · Cached results</span>
         </p>
-        <p class="search-hint" v-else>Select references to prepare a brief for Claude</p>
+        <div class="selection-bar" v-else>
+          <span>{{
+            exportIDs.size
+              ? exportIDs.size + ' selected for export'
+              : 'Select up to 10 references for Claude'
+          }}</span>
+          <button v-if="exportIDs.size" class="quiet" @click="exportIDs.clear()">
+            Clear selection
+          </button>
+        </div>
         <div v-if="!status?.keyConfigured && tab === 'explore' && status" class="setup-line">
           <span>Connect YouTube search with an API key</span
           ><button @click="switchTab('settings')">Set up YouTube<ArrowUpRight /></button>
@@ -438,6 +477,20 @@ const {
                 </button>
               </form>
             </template>
+            <div v-if="selectedSaved" class="reference-export">
+              <button
+                :disabled="exportBusy || dirty || detailLoading"
+                :title="
+                  dirty
+                    ? 'Save your analysis before exporting'
+                    : 'Export this reference and your saved observations for Claude'
+                "
+                @click="exportBrief([selected.id])"
+              >
+                <Download />Export reference
+              </button>
+              <span v-if="dirty" role="status">Unsaved analysis</span>
+            </div>
             <div v-if="selectedSaved" class="detail-footer">
               <button class="quiet" :disabled="busyIDs.has(selected.id)" @click="refreshVideo">
                 <RefreshCw />Refresh details</button

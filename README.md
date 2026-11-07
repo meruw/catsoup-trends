@@ -34,10 +34,12 @@ Searches use your Google project quota. Trends makes no paid AI calls. Check you
 
 ## Research workflow
 
-- **Explore:** search by topic or format, with relevance/views/date sorting, publication windows, language preference, and an optional under-four-minute filter. That duration filter does **not** identify Shorts reliably.
+- **Explore:** start with Recent popular (last 30 days, most viewed) or All-time references. Filters offer relevance/views/date sorting, publication windows, language preference, and an optional under-four-minute filter. The summary describes the applied search; changed controls show a pending notice until Search is pressed. That duration filter does **not** identify Shorts reliably.
 - **Details:** inspect source-provided views, likes, comments, publication date, and observation date. Missing metrics stay missing. Watch the actual video on YouTube.
 - **Saved:** keep references and write your own hook, structure, twist, adaptation, keywords, and notes. Fields have explicit save feedback and unsaved-change protection.
 - **Export for Claude:** select up to ten saved references and download a Markdown brief. It contains source links and your observations, with a prompt for original ideas and ES/EN hook variants. It does not upload anything to Claude.
+
+Export one saved reference directly from its detail panel, or select up to 10 in Saved for a combined brief. Save pending analysis edits before exporting. Clear selection resets only the export selection.
 
 Trends does not watch footage, infer retention, predict virality, or rank trending hashtags. Keywords are your labels; generated keyword suggestions in Claude are not verified trends.
 

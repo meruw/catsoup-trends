@@ -147,3 +147,37 @@ func TestModelAnalysisJSON(t *testing.T) {
 		t.Fatal("missing analysis defaults")
 	}
 }
+
+func TestSearchDateWindowAndOrderingReachProvider(t *testing.T) {
+	for _, period := range []string{"7", "30", "90", "any"} {
+		t.Run(period, func(t *testing.T) {
+			before := time.Now().UTC()
+			mock := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				q := r.URL.Query()
+				if q.Get("order") != "viewCount" || q.Get("pageToken") != "page2" {
+					t.Error("search order or pagination was not forwarded")
+				}
+				if period == "any" {
+					if q.Get("publishedAfter") != "" {
+						t.Error("all-time search restricted by date")
+					}
+				} else {
+					var days int
+					fmt.Sscan(period, &days)
+					since, err := time.Parse(time.RFC3339, q.Get("publishedAfter"))
+					expected := before.AddDate(0, 0, -days)
+					if err != nil || since.Before(expected.Add(-time.Second)) || since.After(expected.Add(5*time.Second)) {
+						t.Error("incorrect publication window")
+					}
+				}
+				fmt.Fprint(w, `{"items":[]}`)
+			}))
+			defer mock.Close()
+			y := NewYouTube()
+			y.BaseURL = mock.URL + "/"
+			if _, err := y.Search(context.Background(), "fixture", Query{Text: "animation", Order: "viewCount", Period: period, Page: "page2"}); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}

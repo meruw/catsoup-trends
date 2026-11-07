@@ -18,13 +18,13 @@ Validated on Windows with Go 1.27.3, Node 24.22.2, npm 11.19.1, and Chrome on 20
 - SQLite persistence, deduplication, note preservation, schema migration, metadata expiry, deletion, and local-workspace query scoping.
 - Windows DPAPI storage, verified encryption before replacement, compatibility with existing encrypted keys, rejection of corrupt/oversized data, and preservation of the previous key plus temporary-file cleanup when replacement fails.
 - API session authentication, Host/Origin rejection, cross-site rejection, request bounds, cached search saving, and export boundaries.
-- Two browser scenarios using the real API and SQLite with a synthetic provider: search/pagination/save/analysis/export/restart/delete; filters/quota error/cancel/empty results/mobile layout.
+- Three browser scenarios using the real API and SQLite with a synthetic provider: search/pagination/save/analysis/individual and batch export/restart/delete; filters/quota error/cancel/empty results/mobile layout; recent/all-time presets, pending filter changes and pagination tied to the applied search. Provider tests verify publication windows and ordering are forwarded correctly.
 - Visual inspection of Explore, Saved with analysis, and mobile details.
 - Runtime frontend dependency audit: no known vulnerabilities reported at the time of the check.
 
 Browser tests intercept thumbnail requests with original synthetic artwork. No real videos, account data, or API keys are included in fixtures.
 
-**Live YouTube search is not yet verified with a user API key.** The remaining acceptance check is to configure a key in Settings, search a real topic, save a reference, watch it, complete a sheet, and export it. Provider quota/access may differ from the synthetic test responses.
+**Live YouTube search was verified on November 7, 2026:** the operator searched a real topic and received 20 results with source metrics. The remaining creative acceptance check is to watch a real reference, save it, write observations and assess the exported brief with Claude. Storage, analysis editing, individual/batch export and persistence across restart are covered by isolated synthetic browser tests.
 
 ## Resource observation
 
@@ -55,5 +55,7 @@ Browser memory and real YouTube latency are not included. No large-library perfo
 - Metadata cleanup runs only while the process is active and on next launch; user-made backups are outside that cleanup.
 - Launch once per session. No installer, single-instance coordinator, or automatic updater.
 - No stable release has been created.
+
+Explore defaults to the last 30 days ordered by total views. All-time references retains access to older examples. These are publication-window searches, not measurements of recent view growth or predictions of virality. Changing a preset does not request YouTube data until Search is pressed.
 
 The next product decision should follow the live research session: whether saving and annotating references produces a useful script brief. Add quantitative analysis only when the input evidence, provider permissions, and analytical method support it.

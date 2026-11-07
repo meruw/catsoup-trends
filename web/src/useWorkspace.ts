@@ -22,8 +22,8 @@ export function useWorkspace() {
     total = ref(0),
     nextPage = ref(''),
     hasMore = ref(false)
-  const order = ref('relevance'),
-    period = ref('any'),
+  const order = ref('viewCount'),
+    period = ref('30'),
     language = ref(''),
     short = ref(true)
   const showFilters = ref(false),
@@ -46,15 +46,59 @@ export function useWorkspace() {
   let controller: AbortController | null = null,
     sequence = 0,
     timer: ReturnType<typeof setTimeout> | undefined,
-    appliedSearch = '',
     appliedSaved = ''
+  const appliedSearch = ref('')
+  const searchParameters = computed(() =>
+    new URLSearchParams({
+      q: query.value.trim(),
+      order: order.value,
+      period: period.value,
+      language: language.value,
+      duration: short.value ? 'short' : 'any',
+    }).toString(),
+  )
+  const searchPending = computed(
+    () => searched.value && appliedSearch.value !== searchParameters.value,
+  )
+  const preset = computed(() =>
+    order.value === 'viewCount' && short.value
+      ? period.value === '30'
+        ? 'recent'
+        : period.value === 'any'
+          ? 'all'
+          : ''
+      : '',
+  )
   const filtersCount = computed(
     () =>
-      Number(order.value !== 'relevance') +
-      Number(period.value !== 'any') +
+      Number(order.value !== 'viewCount') +
+      Number(period.value !== '30') +
       Number(language.value !== '') +
       Number(!short.value),
   )
+  const searchSummary = computed(() => {
+    const params = new URLSearchParams(
+      searched.value ? appliedSearch.value : searchParameters.value,
+    )
+    const days = params.get('period')
+    const sort = { relevance: 'Relevance', viewCount: 'Most viewed', date: 'Newest' }[
+      params.get('order') || ''
+    ]
+    const lang = { es: 'Spanish preferred', en: 'English preferred' }[params.get('language') || '']
+    return [
+      days === 'any' ? 'Any time' : `Last ${days} days`,
+      sort,
+      params.get('duration') === 'short' ? 'Under 4 minutes' : 'All lengths',
+      lang,
+    ]
+      .filter(Boolean)
+      .join(' · ')
+  })
+  function setPreset(value: 'recent' | 'all') {
+    order.value = 'viewCount'
+    period.value = value === 'recent' ? '30' : 'any'
+    short.value = true
+  }
   const selectedSaved = computed(() => !!selected.value && savedIDs.value.has(selected.value.id))
   const dirty = computed(
     () =>
@@ -122,13 +166,7 @@ export function useWorkspace() {
       return
     }
     if (!more) {
-      appliedSearch = new URLSearchParams({
-        q: query.value.trim(),
-        order: order.value,
-        period: period.value,
-        language: language.value,
-        duration: short.value ? 'short' : 'any',
-      }).toString()
+      appliedSearch.value = searchParameters.value
       results.value = []
       nextPage.value = ''
     }
@@ -139,7 +177,9 @@ export function useWorkspace() {
     showFilters.value = false
     try {
       const page = await api<SearchPage>(
-        '/search?' + appliedSearch + (more ? '&page=' + encodeURIComponent(nextPage.value) : ''),
+        '/search?' +
+          appliedSearch.value +
+          (more ? '&page=' + encodeURIComponent(nextPage.value) : ''),
         { signal: controller.signal },
       )
       if (request !== sequence) return
@@ -305,7 +345,7 @@ export function useWorkspace() {
     else if (exportIDs.value.size < 10) exportIDs.value.add(id)
     else tell('Choose up to 10 references per brief')
   }
-  async function exportBrief() {
+  async function exportBrief(ids: string[] = [...exportIDs.value]) {
     if (dirty.value) {
       error.value = 'Save your analysis before exporting'
       return
@@ -315,7 +355,7 @@ export function useWorkspace() {
     try {
       const data = await api<{ markdown: string }>('/exports/claude', {
         method: 'POST',
-        body: JSON.stringify({ ids: [...exportIDs.value] }),
+        body: JSON.stringify({ ids }),
       })
       const url = URL.createObjectURL(
         new Blob([data.markdown], { type: 'text/markdown;charset=utf-8' }),
@@ -429,6 +469,10 @@ export function useWorkspace() {
     busyIDs,
     noteBusy,
     filtersCount,
+    preset,
+    setPreset,
+    searchSummary,
+    searchPending,
     selectedSaved,
     dirty,
     rows,
